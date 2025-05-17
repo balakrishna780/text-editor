@@ -1,0 +1,201 @@
+
+import ipywidgets as widgets
+from IPython.display import display, HTML, clear_output
+import io
+import pandas as pd
+
+# --- Display Logo with Monospace Heart Font ---
+display(HTML("""
+<style>
+    body { background-color: white !important; }
+
+    .logo-container {
+        text-align: center;
+        padding-top: 40px;
+        background-color: white;
+        font-family: 'Courier New', monospace;
+    }
+
+    .autocomplete-logo {
+        font-size: 48px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .autocomplete-logo span:nth-child(1) { color: #4285F4; }
+    .autocomplete-logo span:nth-child(2) { color: #EA4335; }
+    .autocomplete-logo span:nth-child(3) { color: #FBBC05; }
+    .autocomplete-logo span:nth-child(4) { color: #34A853; }
+    .autocomplete-logo span:nth-child(5) { color: #EA4335; }
+    .autocomplete-logo span:nth-child(6) { color: #4285F4; }
+    .autocomplete-logo span:nth-child(7) { color: #34A853; }
+    .autocomplete-logo span:nth-child(8) { color: #FBBC05; }
+    .autocomplete-logo span:nth-child(9) { color: #EA4335; }
+    .autocomplete-logo span:nth-child(10) { color: #4285F4; }
+    .autocomplete-logo span:nth-child(11) { color: #34A853; }
+    .autocomplete-logo span:nth-child(12) { color: #FBBC05; }
+    .autocomplete-logo span:nth-child(13) { color: #EA4335; }
+    .autocomplete-logo span:nth-child(14) { color: #4285F4; }
+</style>
+
+<div class="logo-container">
+    <div class="autocomplete-logo">
+        <span>A</span><span>U</span><span>T</span><span>O</span><span>C</span><span>O</span><span>M</span><span>P</span><span>L</span><span>E</span><span>T</span><span>I</span><span>O</span><span>N</span>
+    </div>
+    <div style="font-size: 24px; color:#900C3F ;">IN TEXT EDITOR</div>
+</div>
+"""))
+
+# --- Keywords ---
+keywords = sorted([
+    "Natural Language Processing", "Colab.research.google.com", "Google.com", "Gmail.com",
+    "Tamil Movies 2025", "Tamil Songs in 2025", "Tamil Songs in 2008", "Tamil Vadivel comedy",
+    "Tamil Gowndamani Senthil comedy", "Moviesda.com", "Tamil Latest Movie", "Irctc.com",
+    "GUVI GEEK NETWORK PRIVATE LIMITED", "HCLTech", "Naan Mudhalvan Upskilling Platform",
+    "IPL Today Match", "Naan Mudhalvan Upskilling Platform login", "Youtube.com",
+    "Java Script", "Java online Compiler", "C++", "Auto completion in Text Editor",
+    "Auto completion in Text view"
+], key=str.lower)
+
+# --- Search Box ---
+editor = widgets.Text(
+    placeholder='Search Google or type a URL',
+    layout=widgets.Layout(width='100%', height='70px', padding='15px'),
+    style={'description_width': '0px'}
+)
+
+# --- Styling ---
+display(HTML("""
+<style>
+    .widget-text input {
+        background-color: black !important;
+        color: white !important;
+        font-size: 20px !important;
+        border-radius: 40px !important;
+        padding: 20px 30px !important;
+        border: 3px solid #dfe1e5 !important;
+    }
+</style>
+"""))
+
+# --- Layout ---
+search_bar = widgets.HBox([editor], layout=widgets.Layout(width='100%', padding='5px'))
+suggestions_out = widgets.Output(layout=widgets.Layout(width='100%'))
+search_area = widgets.VBox([search_bar, suggestions_out], layout=widgets.Layout(width='70%'))
+center_box = widgets.VBox([search_area], layout=widgets.Layout(align_items='center', margin='80px 0px 0px 0px'))
+
+# --- Suggestion Logic ---
+def update_suggestions(change):
+    typed = change['new'].strip().lower()
+    suggestions_out.clear_output()
+    if typed:
+        starts_with = []
+        contains = []
+        for kw in keywords:
+            kw_lower = kw.lower()
+            if kw_lower.startswith(typed):
+                starts_with.append(kw)
+            elif typed in kw_lower:
+                contains.append(kw)
+        matches = starts_with + contains
+        with suggestions_out:
+            for match in matches:
+                kw_lower = match.lower()
+                start = kw_lower.find(typed)
+                end = start + len(typed)
+                highlighted = (
+                    match[:start] +
+                    f"<span style='font-weight:bold; color:black; background-color:#f1f3f4;'>{match[start:end]}</span>" +
+                    match[end:]
+                )
+                html = f"""
+                <div style='text-align: left; padding: 6px 8px; font-size: 18px; color: #333; display: flex; align-items: center;'>
+                    <span style='margin-right: 10px;'>➭</span>{highlighted}
+                </div>
+                """
+                display(widgets.HTML(html))
+
+editor.observe(update_suggestions, names='value')
+display(center_box)
+
+# --- Dataset Entry Button & Form ---
+entry_button = widgets.Button(
+    description='➕ Add Keyword',
+    button_style='success',
+    layout=widgets.Layout(width='200px', height='40px')
+)
+
+new_keyword_input = widgets.Text(
+    placeholder='Enter new keyword...',
+    layout=widgets.Layout(width='100%', padding='5px')
+)
+
+submit_button = widgets.Button(
+    description='Submit',
+    button_style='primary',
+    layout=widgets.Layout(width='150px', margin='10px 0px')
+)
+
+form_output = widgets.Output()
+entry_form = widgets.VBox([new_keyword_input, submit_button, form_output],
+                          layout=widgets.Layout(display='none', width='70%'))
+
+def toggle_form(b):
+    entry_form.layout.display = 'flex' if entry_form.layout.display == 'none' else 'none'
+
+entry_button.on_click(toggle_form)
+
+def add_keyword(b):
+    new_kw = new_keyword_input.value.strip()
+    if new_kw:
+        if new_kw not in keywords:
+            keywords.append(new_kw)
+            keywords.sort(key=str.lower)
+            with form_output:
+                clear_output()
+                print(f"✅ Added: {new_kw}")
+        else:
+            with form_output:
+                clear_output()
+                print(f"⚠️ Already exists: {new_kw}")
+        new_keyword_input.value = ""
+    else:
+        with form_output:
+            clear_output()
+            print("❌ Please enter a valid keyword.")
+
+submit_button.on_click(add_keyword)
+
+# --- File Upload to Load Keywords ---
+upload = widgets.FileUpload(accept='.txt,.csv', multiple=False)
+upload_output = widgets.Output()
+
+def handle_upload(change):
+    upload_output.clear_output()
+    if upload.value:
+        uploaded_file = list(upload.value.values())[0]
+        content = io.BytesIO(uploaded_file['content']).read().decode('utf-8')
+        lines = content.splitlines()
+        new_words = []
+        for line in lines:
+            line = line.strip()
+            if line and line not in keywords:
+                keywords.append(line)
+                new_words.append(line)
+        keywords.sort(key=str.lower)
+        with upload_output:
+            if new_words:
+                print(f"✅ Loaded {len(new_words)} new keywords from file.")
+            else:
+                print("⚠️ No new keywords were added.")
+
+upload.observe(handle_upload, names='value')
+
+# --- Display Entry Section ---
+display(widgets.VBox([
+    entry_button,
+    entry_form,
+    widgets.HTML("<h4 style='margin-top:30px;'>📁 Upload Keyword Dataset (.txt or .csv)</h4>"),
+    upload,
+    upload_output
+], layout=widgets.Layout(width='70%', margin='30px auto')))
